@@ -346,15 +346,23 @@ ORDER BY total_parts_spend DESC;`,
   }
 ];
 
+if (Array.isArray(window.SQL_CHALLENGE_BANK) && window.SQL_CHALLENGE_BANK.length) {
+  challenges.splice(0, challenges.length, ...window.SQL_CHALLENGE_BANK);
+}
+
 const state = {
   table: "equipment",
   sortKey: null,
   sortDirection: 1,
   challenge: 0,
+  activeLevel: "Beginner",
+  challengeSearch: "",
   hintIndex: -1,
-  completed: new Set(JSON.parse(localStorage.getItem("sql-lab-completed") || "[]")),
-  drafts: JSON.parse(localStorage.getItem("sql-lab-drafts") || "{}")
+  completed: new Set(JSON.parse(localStorage.getItem("sql-lab-completed-120") || "[]")),
+  drafts: JSON.parse(localStorage.getItem("sql-lab-drafts-120") || "{}")
 };
+
+let guidedDb = null;
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -399,16 +407,22 @@ function renderDataset() {
 
 function saveDraft() {
   state.drafts[state.challenge] = $("#sql-editor").value;
-  localStorage.setItem("sql-lab-drafts", JSON.stringify(state.drafts));
+  localStorage.setItem("sql-lab-drafts-120", JSON.stringify(state.drafts));
 }
 
 function renderChallengeList() {
-  $("#challenge-list").innerHTML = challenges.map((challenge, index) => `
+  const search = state.challengeSearch.trim().toLowerCase();
+  const visible = challenges.map((challenge, index) => ({ challenge, index })).filter(({ challenge }) => {
+    const levelMatch = challenge.level === state.activeLevel;
+    const searchMatch = !search || `${challenge.title} ${challenge.pattern} ${challenge.task}`.toLowerCase().includes(search);
+    return levelMatch && searchMatch;
+  });
+  $("#challenge-list").innerHTML = visible.length ? visible.map(({ challenge, index }) => `
     <li><button data-index="${index}" class="${index === state.challenge ? "active" : ""} ${state.completed.has(index) ? "complete" : ""}" ${index === state.challenge ? 'aria-current="step"' : ""}>
       <span class="nav-number">${String(index + 1).padStart(2, "0")}</span>
       <span class="nav-title">${challenge.title}</span>
       <span class="nav-state">✓</span>
-    </button></li>`).join("");
+    </button></li>`).join("") : '<li class="no-challenges">No challenges match this search.</li>';
   $$("#challenge-list button").forEach(button => button.addEventListener("click", () => loadChallenge(Number(button.dataset.index))));
 }
 
@@ -416,7 +430,7 @@ function updateProgress() {
   const count = state.completed.size;
   $("#progress-label").textContent = `${count} / ${challenges.length} complete`;
   $("#progress-bar").style.width = `${count / challenges.length * 100}%`;
-  localStorage.setItem("sql-lab-completed", JSON.stringify([...state.completed]));
+  localStorage.setItem("sql-lab-completed-120", JSON.stringify([...state.completed]));
 }
 
 function updateLineNumbers() {
@@ -429,8 +443,10 @@ function loadChallenge(index) {
   state.challenge = Math.max(0, Math.min(challenges.length - 1, index));
   state.hintIndex = -1;
   const challenge = challenges[state.challenge];
+  state.activeLevel = challenge.level;
   $("#challenge-number").textContent = `Challenge ${String(state.challenge + 1).padStart(2, "0")}`;
   $("#challenge-level").textContent = challenge.level;
+  $("#challenge-level").dataset.level = challenge.level;
   $("#challenge-pattern").textContent = challenge.pattern;
   $("#challenge-name").textContent = challenge.title;
   $("#challenge-scenario").textContent = challenge.scenario;
@@ -443,16 +459,44 @@ function loadChallenge(index) {
   $("#show-hint").textContent = "Show hint";
   $("#previous-challenge").disabled = state.challenge === 0;
   $("#next-challenge").disabled = state.challenge === challenges.length - 1;
-  $("#pagination-label").textContent = `${state.challenge + 1} of ${challenges.length}`;
+  const levelChallenges = challenges.filter(item => item.level === challenge.level);
+  const levelPosition = levelChallenges.indexOf(challenge) + 1;
+  $("#pagination-label").textContent = `${state.challenge + 1} of ${challenges.length} · ${challenge.level} ${levelPosition}/30`;
+  $$("#level-tabs button").forEach(button => button.setAttribute("aria-selected", String(button.dataset.level === state.activeLevel)));
   updateLineNumbers();
   renderChallengeList();
 }
 
+function executeSql(query) {
+  if (!guidedDb) throw new Error("The SQL engine is still loading.");
+  const resultSets = guidedDb.exec(query);
+  return resultSets.length ? resultSets[resultSets.length - 1] : { columns: [], values: [] };
+}
+
+function resultRows(result) {
+  return result.values.map(row => Object.fromEntries(result.columns.map((column, index) => [column, row[index]])));
+}
+
+function normalizedValues(result) {
+  return result.values.map(row => row.map(value => typeof value === "number" ? Number(value.toFixed(8)) : value));
+}
+
 function showOutput() {
   const challenge = challenges[state.challenge];
+  let result;
+  try {
+    result = executeSql(challenge.solution);
+  } catch (error) {
+    const feedback = $("#feedback");
+    feedback.className = "feedback error";
+    feedback.innerHTML = `<strong>Reference query error.</strong>${error.message}`;
+    feedback.hidden = false;
+    return;
+  }
+  const output = resultRows(result);
   $("#output-title").textContent = challenge.title;
-  $("#output-count").textContent = `${challenge.output.length} row${challenge.output.length === 1 ? "" : "s"}`;
-  renderTable($("#output-table"), challenge.output);
+  $("#output-count").textContent = `${output.length} row${output.length === 1 ? "" : "s"}`;
+  renderTable($("#output-table"), output);
   $("#design-note").textContent = challenge.note;
   $("#output-card").hidden = false;
   requestAnimationFrame(() => $("#output-card").scrollIntoView({ behavior: "smooth", block: "nearest" }));
@@ -473,10 +517,26 @@ function checkQuery() {
     return;
   }
   const challenge = challenges[state.challenge];
-  const failed = challenge.checks.find(check => !check.test(query));
-  if (failed) {
+  if (/\b(insert|update|delete|drop|alter|create|replace|pragma|attach|detach|vacuum)\b/i.test(query) || !/^(select|with)\b/i.test(query)) {
     feedback.className = "feedback error";
-    feedback.innerHTML = `<strong>Almost there.</strong>${failed.message}`;
+    feedback.innerHTML = "<strong>Read-only challenge.</strong>Use a SELECT or WITH query. Data-changing statements belong in Free Practice.";
+    feedback.hidden = false;
+    return;
+  }
+  try {
+    const actual = executeSql($("#sql-editor").value);
+    const expected = executeSql(challenge.solution);
+    const sameShape = actual.columns.length === expected.columns.length && actual.values.length === expected.values.length;
+    const sameValues = JSON.stringify(normalizedValues(actual)) === JSON.stringify(normalizedValues(expected));
+    if (!sameShape || !sameValues) {
+      feedback.className = "feedback error";
+      feedback.innerHTML = `<strong>Query ran, but the result differs.</strong>Expected ${expected.values.length} rows and ${expected.columns.length} columns; your query returned ${actual.values.length} rows and ${actual.columns.length} columns. Check filters, grain, grouping, and ordering.`;
+      feedback.hidden = false;
+      return;
+    }
+  } catch (error) {
+    feedback.className = "feedback error";
+    feedback.innerHTML = `<strong>SQL error.</strong>${error.message}`;
     feedback.hidden = false;
     return;
   }
@@ -484,7 +544,7 @@ function checkQuery() {
   updateProgress();
   renderChallengeList();
   feedback.className = "feedback success";
-  feedback.innerHTML = "<strong>Approach accepted.</strong>Your query includes the key pattern, filters, grain, and ordering expected for this challenge.";
+  feedback.innerHTML = "<strong>Correct result.</strong>Your query matches the expected row set, column count, and ordering.";
   feedback.hidden = false;
   showOutput();
 }
@@ -518,9 +578,24 @@ function toast(message) {
 }
 
 function initialize() {
+  $("#check-query").disabled = true;
+  $("#reveal-query").disabled = true;
+  $("#check-query").innerHTML = 'Loading SQL… <span aria-hidden="true">◌</span>';
   renderDataset();
   loadChallenge(0);
   updateProgress();
+
+  $$("#level-tabs button").forEach(button => button.addEventListener("click", () => {
+    state.activeLevel = button.dataset.level;
+    state.challengeSearch = "";
+    $("#challenge-search").value = "";
+    const firstIndex = challenges.findIndex(challenge => challenge.level === state.activeLevel);
+    loadChallenge(firstIndex);
+  }));
+  $("#challenge-search").addEventListener("input", event => {
+    state.challengeSearch = event.target.value;
+    renderChallengeList();
+  });
 
   $$(".table-tabs button").forEach(button => button.addEventListener("click", () => {
     state.table = button.dataset.table;
@@ -563,12 +638,44 @@ function initialize() {
   $("#reset-progress").addEventListener("click", () => {
     state.completed.clear();
     state.drafts = {};
-    localStorage.removeItem("sql-lab-completed");
-    localStorage.removeItem("sql-lab-drafts");
+    localStorage.removeItem("sql-lab-completed-120");
+    localStorage.removeItem("sql-lab-drafts-120");
     updateProgress();
     loadChallenge(0);
     toast("Progress and drafts reset.");
   });
 }
 
+async function initializeGuidedDatabase() {
+  try {
+    const SQL = await initSqlJs({ locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.13.0/${file}` });
+    guidedDb = new SQL.Database();
+    guidedDb.run(`
+      CREATE TABLE equipment (equipment_id TEXT PRIMARY KEY, equipment_name TEXT, model TEXT, site TEXT, total_hmr INTEGER, status TEXT);
+      CREATE TABLE maintenance_orders (order_id TEXT PRIMARY KEY, equipment_id TEXT, order_date TEXT, maintenance_type TEXT, downtime_hrs INTEGER, cost_inr INTEGER, status TEXT);
+      CREATE TABLE spare_part_usage (usage_id TEXT PRIMARY KEY, order_id TEXT, material TEXT, category TEXT, quantity INTEGER, unit_cost INTEGER);
+    `);
+    const loaders = [
+      ["INSERT INTO equipment VALUES (?, ?, ?, ?, ?, ?)", datasets.equipment, ["equipment_id", "equipment_name", "model", "site", "total_hmr", "status"]],
+      ["INSERT INTO maintenance_orders VALUES (?, ?, ?, ?, ?, ?, ?)", datasets.maintenance_orders, ["order_id", "equipment_id", "order_date", "maintenance_type", "downtime_hrs", "cost_inr", "status"]],
+      ["INSERT INTO spare_part_usage VALUES (?, ?, ?, ?, ?, ?)", datasets.spare_part_usage, ["usage_id", "order_id", "material", "category", "quantity", "unit_cost"]]
+    ];
+    loaders.forEach(([sql, rows, fields]) => {
+      const statement = guidedDb.prepare(sql);
+      rows.forEach(row => statement.run(fields.map(field => row[field])));
+      statement.free();
+    });
+    $("#check-query").disabled = false;
+    $("#reveal-query").disabled = false;
+    $("#check-query").innerHTML = 'Check result <span aria-hidden="true">▶</span>';
+  } catch (error) {
+    const feedback = $("#feedback");
+    feedback.className = "feedback error";
+    feedback.innerHTML = `<strong>SQL engine could not start.</strong>${error.message}`;
+    feedback.hidden = false;
+    $("#check-query").innerHTML = "Engine unavailable";
+  }
+}
+
 initialize();
+initializeGuidedDatabase();

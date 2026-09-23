@@ -94,6 +94,7 @@ h1 span { color: var(--lime); }
 .button.ghost { border-color: var(--line); color: var(--muted); }
 .button.ghost:hover { border-color: var(--faint); color: var(--ink); }
 .button.compact { min-height: 38px; padding: .55rem .85rem; font-size: .8rem; }
+.button:disabled { opacity: .5; cursor: not-allowed; transform: none; }
 .hero-stats { display: flex; flex-wrap: wrap; gap: 2.8rem; margin: 3.2rem 0 0; }
 .hero-stats div { display: grid; }
 .hero-stats dt { color: var(--ink); font: 500 1.35rem var(--mono); }
@@ -148,8 +149,21 @@ tbody tr:hover { background: #101a2c; }
 .challenge-heading { grid-template-columns: 1fr auto; }
 .text-button { padding: .5rem 0; color: var(--faint); background: none; border: 0; border-bottom: 1px solid var(--faint); cursor: pointer; font-size: .75rem; }
 .text-button:hover { color: var(--ink); }
+.challenge-controls { display: flex; justify-content: space-between; align-items: stretch; gap: 1rem; margin: -1rem 0 .75rem; }
+.level-tabs { display: flex; min-width: 0; overflow-x: auto; border: 1px solid var(--line); background: var(--panel); }
+.level-tabs button { min-height: 46px; padding: .65rem 1rem; border: 0; border-right: 1px solid var(--line); border-bottom: 2px solid transparent; background: transparent; color: var(--faint); cursor: pointer; font: 500 .7rem var(--mono); white-space: nowrap; }
+.level-tabs button:last-child { border-right: 0; }
+.level-tabs button span { margin-left: .35rem; color: #46536c; }
+.level-tabs button:hover { color: var(--ink); background: #10192a; }
+.level-tabs button[aria-selected="true"] { color: var(--cyan); border-bottom-color: var(--cyan); background: #0f1c2d; }
+.challenge-search { min-width: min(320px, 35vw); display: flex; align-items: center; gap: .5rem; padding: 0 .8rem; border: 1px solid var(--line); color: var(--faint); background: var(--panel); }
+.challenge-search input { width: 100%; border: 0; outline: 0; background: transparent; color: var(--ink); font: 400 .72rem var(--mono); }
+.challenge-search input::placeholder { color: var(--faint); }
+.challenge-source-note { display: flex; gap: .8rem; align-items: center; margin-bottom: 1rem; padding: .65rem .85rem; border-left: 2px solid var(--orange); background: #14140f; }
+.challenge-source-note span { flex: 0 0 auto; color: var(--orange); font: 600 .6rem var(--mono); letter-spacing: .08em; }
+.challenge-source-note p { margin: 0; color: var(--faint); font-size: .7rem; }
 .lab-shell { display: grid; grid-template-columns: 270px minmax(0, 1fr); border: 1px solid var(--line); background: #090f1c; }
-.challenge-nav { padding: 1rem 0; border-right: 1px solid var(--line); background: #0a101d; }
+.challenge-nav { position: sticky; top: 84px; align-self: start; max-height: calc(100vh - 100px); overflow-y: auto; padding: 1rem 0; border-right: 1px solid var(--line); background: #0a101d; }
 .nav-label { padding: .5rem 1rem 1rem; color: var(--faint); font: 500 .65rem var(--mono); letter-spacing: .12em; }
 .challenge-nav ol { list-style: none; padding: 0; margin: 0; }
 .challenge-nav button { width: 100%; display: grid; grid-template-columns: 30px 1fr 18px; gap: .6rem; align-items: center; padding: .8rem 1rem; border: 0; border-left: 2px solid transparent; background: transparent; color: var(--faint); text-align: left; cursor: pointer; }
@@ -159,6 +173,7 @@ tbody tr:hover { background: #101a2c; }
 .challenge-nav .nav-title { font-size: .77rem; line-height: 1.3; }
 .challenge-nav .nav-state { display: grid; place-items: center; width: 16px; height: 16px; border: 1px solid var(--line); border-radius: 50%; font-size: .58rem; color: transparent; }
 .challenge-nav button.complete .nav-state { background: var(--lime); border-color: var(--lime); color: #152006; }
+.challenge-nav .no-challenges { padding: 1rem; color: var(--faint); font-size: .72rem; }
 .interview-note { margin: 1.4rem 1rem .4rem; padding: .9rem; border: 1px solid var(--line); background: var(--panel); }
 .interview-note span { color: var(--orange); font: 600 .62rem var(--mono); letter-spacing: .1em; }
 .interview-note p { margin: .55rem 0 0; color: var(--faint); font-size: .72rem; }
@@ -167,6 +182,9 @@ tbody tr:hover { background: #101a2c; }
 .brief-meta { display: flex; flex-wrap: wrap; align-items: center; gap: .7rem 1rem; color: var(--faint); font: 500 .66rem var(--mono); text-transform: uppercase; letter-spacing: .06em; }
 .brief-meta > span + span { padding-left: 1rem; border-left: 1px solid var(--line); }
 .level-badge { color: var(--cyan); }
+.level-badge[data-level="Intermediate"] { color: var(--blue); }
+.level-badge[data-level="Expert"] { color: var(--orange); }
+.level-badge[data-level="Hardest"] { color: var(--red); }
 .brief-card h3 { margin: .8rem 0 .35rem; font-size: clamp(1.5rem, 3vw, 2.35rem); letter-spacing: -.035em; }
 .brief-card > p { max-width: 800px; margin: 0; color: var(--muted); font-size: .9rem; }
 .task-box { display: grid; grid-template-columns: 60px 1fr; gap: .6rem; margin-top: 1.2rem; padding: .9rem 1rem; background: #0d1728; border-left: 2px solid var(--cyan); }
@@ -221,7 +239,7 @@ footer > span { color: var(--ink); font-weight: 700; }
   .schema-map { grid-template-columns: 1fr; gap: .55rem; }
   .relation { grid-template-columns: auto 1fr auto; transform: rotate(90deg); width: 80px; justify-self: center; }
   .lab-shell { grid-template-columns: 1fr; }
-  .challenge-nav { border-right: 0; border-bottom: 1px solid var(--line); }
+  .challenge-nav { position: static; max-height: none; overflow: visible; border-right: 0; border-bottom: 1px solid var(--line); }
   .challenge-nav ol { display: flex; overflow-x: auto; padding: 0 .7rem .7rem; }
   .challenge-nav li { flex: 0 0 190px; }
   .challenge-nav button { border-left: 0; border-bottom: 2px solid transparent; height: 100%; }
@@ -242,6 +260,9 @@ footer > span { color: var(--ink); font-weight: 700; }
   .table-tabs button { flex: 0 0 auto; }
   .search-box { min-width: 0; }
   .challenge-workspace { padding: 1rem; }
+  .challenge-controls { flex-direction: column; }
+  .challenge-search { min-width: 0; min-height: 44px; }
+  .challenge-source-note { align-items: flex-start; flex-direction: column; }
   .brief-meta > span + span { padding-left: .6rem; }
   .task-box { grid-template-columns: 1fr; }
   .editor-toolbar { grid-template-columns: 1fr 1fr; }

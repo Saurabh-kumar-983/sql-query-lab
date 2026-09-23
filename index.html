@@ -35,13 +35,13 @@
       <div class="hero-copy">
         <p class="eyebrow">PostgreSQL · Guided analyst track</p>
         <h1 id="hero-title">Think in sets.<br><span>Design better queries.</span></h1>
-        <p class="hero-description">Practice the SQL patterns analysts actually use: comparison and existence subqueries, readable multi-stage CTEs, ranking, and safe aggregation across one-to-many joins.</p>
+        <p class="hero-description">Work through 120 original SQL challenges—from first SELECT statements to HackerRank-style advanced analytics, multi-stage CTEs, ranking, sessionization, and grain-safe query design.</p>
         <div class="hero-actions">
           <button class="button primary" id="start-practice">Start challenge 01 <span aria-hidden="true">→</span></button>
           <a class="button ghost" href="#dataset">Inspect the data</a>
         </div>
         <dl class="hero-stats">
-          <div><dt>08</dt><dd>graded challenges</dd></div>
+          <div><dt>120</dt><dd>graded challenges</dd></div>
           <div><dt>03</dt><dd>linked tables</dd></div>
           <div><dt>01</dt><dd>realistic fleet case</dd></div>
         </dl>
@@ -53,10 +53,10 @@
           <span class="status-dot"><i></i> Ready</span>
         </div>
         <ol>
-          <li><span>01</span><div><strong>Compare</strong><small>Scalar + correlated subqueries</small></div></li>
-          <li><span>02</span><div><strong>Test existence</strong><small>EXISTS + NOT EXISTS</small></div></li>
-          <li><span>03</span><div><strong>Stage logic</strong><small>Readable CTE pipelines</small></div></li>
-          <li><span>04</span><div><strong>Design safely</strong><small>Grain, ranking + fan-out</small></div></li>
+          <li><span>01</span><div><strong>Beginner</strong><small>Filtering, sorting + aggregation</small></div></li>
+          <li><span>02</span><div><strong>Intermediate</strong><small>Joins, subqueries + CTEs</small></div></li>
+          <li><span>03</span><div><strong>Expert</strong><small>Windows, dates + query design</small></div></li>
+          <li><span>04</span><div><strong>Hardest</strong><small>Assessment-style analytics</small></div></li>
         </ol>
         <div class="route-tip"><span>⌘</span><p><strong>Keyboard friendly</strong><br>Ctrl/⌘ + Enter checks your approach.</p></div>
       </aside>
@@ -119,6 +119,24 @@
           <h2 id="challenge-title">Build the query. Check the reasoning.</h2>
         </div>
         <button class="text-button" id="reset-progress">Reset progress</button>
+      </div>
+
+      <div class="challenge-controls">
+        <div class="level-tabs" id="level-tabs" role="tablist" aria-label="Challenge difficulty">
+          <button role="tab" aria-selected="true" data-level="Beginner">Beginner <span>30</span></button>
+          <button role="tab" aria-selected="false" data-level="Intermediate">Intermediate <span>30</span></button>
+          <button role="tab" aria-selected="false" data-level="Expert">Expert <span>30</span></button>
+          <button role="tab" aria-selected="false" data-level="Hardest">Hardest <span>30</span></button>
+        </div>
+        <label class="challenge-search">
+          <span aria-hidden="true">⌕</span>
+          <span class="sr-only">Search challenges</span>
+          <input id="challenge-search" type="search" placeholder="Search challenge or pattern…" autocomplete="off">
+        </label>
+      </div>
+      <div class="challenge-source-note">
+        <span>120 ORIGINAL QUESTIONS</span>
+        <p>Structured around publicly documented SQL skill areas used by coding assessments and analytics interviews; not copied from proprietary company tests.</p>
       </div>
 
       <div class="lab-shell">
@@ -201,6 +219,8 @@
   </footer>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.13.0/sql-wasm.js"></script>
+  <script src="challenge-bank.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
