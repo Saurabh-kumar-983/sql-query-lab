@@ -2,6 +2,12 @@
 
 An interactive SQL practice website focused on **Subqueries, CTEs, Query Design, joins, aggregations, and window functions**.
 
+## Visit the website
+
+**[Open SQL Query Lab](https://saurabh-kumar-983.github.io/sql-query-lab/)**
+
+[Open the Free Practice workspace](https://saurabh-kumar-983.github.io/sql-query-lab/practice.html)
+
 ## Features
 
 - Guided analyst challenges with hints and reference solutions
