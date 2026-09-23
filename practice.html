@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1020">
+  <meta name="description" content="Run SQL freely against three realistic fleet-maintenance tables.">
+  <title>Free Practice · SQL Query Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="practice-page">
+  <a class="skip-link" href="#free-editor">Skip to SQL editor</a>
+
+  <header class="topbar practice-topbar">
+    <a class="brand" href="index.html" aria-label="SQL Query Lab home">
+      <span class="brand-mark" aria-hidden="true">SQL</span>
+      <span>Query Lab</span>
+    </a>
+    <nav aria-label="Practice navigation">
+      <a href="index.html">Guided challenges</a>
+      <a href="practice.html" class="active-page" aria-current="page">Free Practice</a>
+    </nav>
+    <div class="engine-state" id="engine-state"><i></i><span>Loading SQL engine…</span></div>
+  </header>
+
+  <main class="practice-main">
+    <div class="practice-intro">
+      <div>
+        <p class="eyebrow">Open workspace · SQLite engine</p>
+        <h1>Practice without a prompt.</h1>
+        <p>Explore all three tables, write any SQL query, and inspect the real result. Your query history stays in this browser.</p>
+      </div>
+      <div class="shortcut-card">
+        <span>RUN QUERY</span>
+        <strong>Ctrl / ⌘ + Enter</strong>
+      </div>
+    </div>
+
+    <div class="free-lab">
+      <aside class="free-sidebar" aria-label="Database explorer">
+        <div class="sidebar-header">
+          <div>
+            <span>DATABASE</span>
+            <strong>fleet_ops.db</strong>
+          </div>
+          <button id="reset-database" class="mini-button" title="Restore the original sample data">Reset data</button>
+        </div>
+
+        <div class="schema-tree" id="schema-tree">
+          <button data-table="equipment" class="active">
+            <span class="tree-icon">▦</span><span>equipment</span><small>8</small>
+          </button>
+          <button data-table="maintenance_orders">
+            <span class="tree-icon">▦</span><span>maintenance_orders</span><small>12</small>
+          </button>
+          <button data-table="spare_part_usage">
+            <span class="tree-icon">▦</span><span>spare_part_usage</span><small>16</small>
+          </button>
+        </div>
+
+        <div class="sidebar-section-label">COLUMNS</div>
+        <div id="column-list" class="column-list" aria-live="polite"></div>
+
+        <div class="sidebar-section-label history-label">
+          <span>RECENT QUERIES</span>
+          <button id="clear-history">Clear</button>
+        </div>
+        <div id="query-history" class="query-history"></div>
+      </aside>
+
+      <div class="free-workspace">
+        <div class="workspace-tabs" role="tablist" aria-label="Practice workspace">
+          <button role="tab" aria-selected="true" data-panel="query-panel">Query editor</button>
+          <button role="tab" aria-selected="false" data-panel="data-panel">Table preview</button>
+          <span>Local session · changes are temporary</span>
+        </div>
+
+        <div id="query-panel" class="workspace-panel active" role="tabpanel">
+          <div class="example-strip" aria-label="Starter queries">
+            <span>START WITH</span>
+            <button data-example="inspect">Inspect rows</button>
+            <button data-example="filter">Filter + sort</button>
+            <button data-example="join">Join tables</button>
+            <button data-example="aggregate">Aggregate by site</button>
+            <button data-example="cte">CTE analysis</button>
+          </div>
+
+          <div class="free-editor-card" id="free-editor">
+            <div class="editor-toolbar">
+              <div class="window-dots" aria-hidden="true"><i></i><i></i><i></i></div>
+              <span>scratch.sql</span>
+              <span id="cursor-position">Ln 1, Col 1</span>
+            </div>
+            <div class="editor-shell free-editor-shell">
+              <div class="line-numbers" id="free-line-numbers" aria-hidden="true">1</div>
+              <textarea id="free-sql-editor" spellcheck="false" aria-label="Free practice SQL editor">SELECT *
+FROM equipment
+ORDER BY total_hmr DESC;</textarea>
+            </div>
+            <div class="editor-actions free-actions">
+              <div>
+                <button class="button primary compact" id="run-sql" disabled>Run query <span aria-hidden="true">▶</span></button>
+                <button class="button ghost compact" id="format-sql">Format</button>
+                <button class="button ghost compact" id="clear-editor">Clear</button>
+              </div>
+              <span id="query-timing">Ready when you are</span>
+            </div>
+          </div>
+
+          <div id="runner-message" class="runner-message" aria-live="polite" hidden></div>
+
+          <article class="result-card" id="result-card">
+            <div class="result-header">
+              <div>
+                <span>RESULT</span>
+                <strong id="result-summary">Run a query to see rows</strong>
+              </div>
+              <button id="copy-results" class="mini-button" disabled>Copy CSV</button>
+            </div>
+            <div class="empty-result" id="empty-result">
+              <div class="empty-icon">&gt;_</div>
+              <strong>Your result set will appear here.</strong>
+              <p>Use a starter query or write your own SQL above.</p>
+            </div>
+            <div class="table-wrap" id="free-result-table" hidden></div>
+          </article>
+        </div>
+
+        <div id="data-panel" class="workspace-panel" role="tabpanel" hidden>
+          <div class="preview-heading">
+            <div>
+              <span>TABLE PREVIEW</span>
+              <h2 id="preview-title">equipment</h2>
+            </div>
+            <span id="preview-count">8 rows</span>
+          </div>
+          <div class="table-wrap preview-table" id="free-data-preview"></div>
+          <div class="grain-note">
+            <span>GRAIN CHECK</span>
+            <p id="grain-description">One row represents one registered equipment asset.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="practice-prompts">
+      <span>WHEN YOU NEED AN IDEA</span>
+      <div>
+        <article><b>01</b><p>Which site has the highest total maintenance cost?</p></article>
+        <article><b>02</b><p>Find equipment with no maintenance orders.</p></article>
+        <article><b>03</b><p>Rank the two costliest orders within each site.</p></article>
+      </div>
+    </div>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.13.0/sql-wasm.js"></script>
+  <script src="practice.js"></script>
+</body>
+</html>

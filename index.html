@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1020">
+  <meta name="description" content="A guided SQL practice lab for subqueries, CTEs, and query design.">
+  <title>SQL Query Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#challenge-lab">Skip to challenges</a>
+
+  <header class="topbar">
+    <a class="brand" href="#top" aria-label="SQL Query Lab home">
+      <span class="brand-mark" aria-hidden="true">SQL</span>
+      <span>Query Lab</span>
+    </a>
+    <nav aria-label="Primary navigation">
+      <a href="#dataset">Dataset</a>
+      <a href="#challenge-lab">Challenges</a>
+      <a href="practice.html" target="_blank" rel="noopener">Free Practice ↗</a>
+    </nav>
+    <div class="topbar-progress" aria-label="Course progress">
+      <span id="progress-label">0 / 8 complete</span>
+      <div class="progress-track"><span id="progress-bar"></span></div>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="eyebrow">PostgreSQL · Guided analyst track</p>
+        <h1 id="hero-title">Think in sets.<br><span>Design better queries.</span></h1>
+        <p class="hero-description">Practice the SQL patterns analysts actually use: comparison and existence subqueries, readable multi-stage CTEs, ranking, and safe aggregation across one-to-many joins.</p>
+        <div class="hero-actions">
+          <button class="button primary" id="start-practice">Start challenge 01 <span aria-hidden="true">→</span></button>
+          <a class="button ghost" href="#dataset">Inspect the data</a>
+        </div>
+        <dl class="hero-stats">
+          <div><dt>08</dt><dd>graded challenges</dd></div>
+          <div><dt>03</dt><dd>linked tables</dd></div>
+          <div><dt>01</dt><dd>realistic fleet case</dd></div>
+        </dl>
+      </div>
+
+      <aside class="route-card" aria-label="Learning route">
+        <div class="route-card-header">
+          <span>YOUR ROUTE</span>
+          <span class="status-dot"><i></i> Ready</span>
+        </div>
+        <ol>
+          <li><span>01</span><div><strong>Compare</strong><small>Scalar + correlated subqueries</small></div></li>
+          <li><span>02</span><div><strong>Test existence</strong><small>EXISTS + NOT EXISTS</small></div></li>
+          <li><span>03</span><div><strong>Stage logic</strong><small>Readable CTE pipelines</small></div></li>
+          <li><span>04</span><div><strong>Design safely</strong><small>Grain, ranking + fan-out</small></div></li>
+        </ol>
+        <div class="route-tip"><span>⌘</span><p><strong>Keyboard friendly</strong><br>Ctrl/⌘ + Enter checks your approach.</p></div>
+      </aside>
+    </section>
+
+    <section class="dataset-section" id="dataset" aria-labelledby="dataset-title">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">The dataset</p>
+          <h2 id="dataset-title">Know the grain before you query.</h2>
+        </div>
+        <p>One equipment can have many work orders. One work order can consume many spare parts. Every challenge uses these same records.</p>
+      </div>
+
+      <div class="schema-map" aria-label="Dataset relationships">
+        <article class="schema-node active">
+          <span class="node-count">8 rows</span>
+          <strong>equipment</strong>
+          <small><b>PK</b> equipment_id</small>
+        </article>
+        <div class="relation"><span>1</span><i></i><span>∞</span></div>
+        <article class="schema-node">
+          <span class="node-count">12 rows</span>
+          <strong>maintenance_orders</strong>
+          <small><b>FK</b> equipment_id</small>
+        </article>
+        <div class="relation"><span>1</span><i></i><span>∞</span></div>
+        <article class="schema-node">
+          <span class="node-count">16 rows</span>
+          <strong>spare_part_usage</strong>
+          <small><b>FK</b> order_id</small>
+        </article>
+      </div>
+
+      <div class="data-browser">
+        <div class="data-toolbar">
+          <div class="table-tabs" role="tablist" aria-label="Sample data tables">
+            <button role="tab" aria-selected="true" data-table="equipment">equipment</button>
+            <button role="tab" aria-selected="false" data-table="maintenance_orders">maintenance_orders</button>
+            <button role="tab" aria-selected="false" data-table="spare_part_usage">spare_part_usage</button>
+          </div>
+          <label class="search-box">
+            <span aria-hidden="true">⌕</span>
+            <span class="sr-only">Filter visible table</span>
+            <input id="table-search" type="search" placeholder="Filter rows…" autocomplete="off">
+          </label>
+        </div>
+        <div class="table-wrap" id="data-table" tabindex="0" aria-live="polite"></div>
+        <div class="table-footer">
+          <span id="row-count"></span>
+          <span>Click a column name to sort</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="challenge-section" id="challenge-lab" aria-labelledby="challenge-title">
+      <div class="section-heading challenge-heading">
+        <div>
+          <p class="eyebrow">Challenge lab</p>
+          <h2 id="challenge-title">Build the query. Check the reasoning.</h2>
+        </div>
+        <button class="text-button" id="reset-progress">Reset progress</button>
+      </div>
+
+      <div class="lab-shell">
+        <aside class="challenge-nav" aria-label="Challenge list">
+          <div class="nav-label">PROGRESSION</div>
+          <ol id="challenge-list"></ol>
+          <div class="interview-note">
+            <span>INTERVIEW TIP</span>
+            <p>State your target grain before writing SQL. It prevents most join and aggregation errors.</p>
+          </div>
+        </aside>
+
+        <div class="challenge-workspace">
+          <article class="brief-card">
+            <div class="brief-meta">
+              <span id="challenge-number">Challenge 01</span>
+              <span id="challenge-level" class="level-badge">Foundation</span>
+              <span id="challenge-pattern">Scalar subquery</span>
+            </div>
+            <h3 id="challenge-name"></h3>
+            <p id="challenge-scenario"></p>
+            <div class="task-box">
+              <span>TASK</span>
+              <p id="challenge-task"></p>
+            </div>
+            <div class="requirements" id="challenge-requirements"></div>
+          </article>
+
+          <div class="editor-card">
+            <div class="editor-toolbar">
+              <div class="window-dots" aria-hidden="true"><i></i><i></i><i></i></div>
+              <span>solution.sql</span>
+              <span>PostgreSQL 15</span>
+            </div>
+            <div class="editor-shell">
+              <div class="line-numbers" id="line-numbers" aria-hidden="true">1</div>
+              <textarea id="sql-editor" spellcheck="false" aria-label="SQL query editor" placeholder="-- Write your query here"></textarea>
+            </div>
+            <div class="editor-actions">
+              <div>
+                <button class="button primary compact" id="check-query">Check approach <span aria-hidden="true">▶</span></button>
+                <button class="button ghost compact" id="show-hint">Show hint</button>
+                <button class="button ghost compact" id="reveal-query">Reveal query</button>
+              </div>
+              <button class="icon-button" id="clear-query" title="Clear editor" aria-label="Clear editor">↺</button>
+            </div>
+          </div>
+
+          <div id="feedback" class="feedback" aria-live="polite" hidden></div>
+          <div id="hint-panel" class="hint-panel" hidden></div>
+
+          <article class="output-card" id="output-card" hidden>
+            <div class="output-header">
+              <div>
+                <span>EXPECTED OUTPUT</span>
+                <strong id="output-title"></strong>
+              </div>
+              <span id="output-count"></span>
+            </div>
+            <div class="table-wrap" id="output-table"></div>
+            <div class="why-box">
+              <span>WHY THIS DESIGN WORKS</span>
+              <p id="design-note"></p>
+            </div>
+          </article>
+
+          <div class="challenge-pagination">
+            <button class="button ghost compact" id="previous-challenge">← Previous</button>
+            <span id="pagination-label">1 of 8</span>
+            <button class="button secondary compact" id="next-challenge">Next challenge →</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span>SQL Query Lab</span>
+    <p>Private guided practice · Progress is saved in this browser.</p>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>
