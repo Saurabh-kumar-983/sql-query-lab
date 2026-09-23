@@ -1,14 +1,51 @@
 (() => {
+  const buildScenario = (title, task) => {
+    const text = `${title} ${task}`.toLowerCase();
+    if (/part|material|spare|inventory|lubricant/.test(text)) {
+      return "The maintenance-stores team needs an auditable view of parts usage and spend so it can plan stock and investigate unusual consumption.";
+    }
+    if (/cost|spend|budget|expensive|median|pareto|concentration/.test(text)) {
+      return "Operations finance is reviewing maintenance cost and needs a dependable result for budget decisions and exception analysis.";
+    }
+    if (/downtime|risk|streak|session|failure|corrective|anomal/.test(text)) {
+      return "The reliability team is investigating repeated maintenance activity and operational risk so it can prioritize the right equipment.";
+    }
+    if (/site|monthly|quarter|trend|calendar|date spine/.test(text)) {
+      return "Operations leadership needs a consistent performance view across sites and time periods for its management review.";
+    }
+    if (/duplicate|missing|audit|quality|never maintained|without recorded/.test(text)) {
+      return "The data-quality team is checking whether the maintenance records are complete, unique, and safe to use in reporting.";
+    }
+    return "The fleet analyst needs a clear operational result that can be checked against the source tables and reused in a report.";
+  };
+
+  const inferGrain = (title, task) => {
+    const text = `${title} ${task}`.toLowerCase();
+    if (/one row|executive kpi|fleet size|total maintenance cost|hmr range/.test(text)) return "one summary row";
+    if (/site and category|site, category|site-category/.test(text)) return "one row per site and category";
+    if (/month.*site|site.*month|inside each month/.test(text)) return "one row per month and site";
+    if (/equipment.*session|session.*equipment/.test(text)) return "one row per equipment session";
+    if (/by site|for every site|for each site|each site's|at each site|site matrix/.test(text)) return "one row per site";
+    if (/by month|per month|monthly/.test(text)) return "one row per calendar month";
+    if (/by quarter|quarterly/.test(text)) return "one row per quarter";
+    if (/by category|per category|each category/.test(text)) return "one row per material category";
+    if (/per equipment|for each equipment|every equipment|each equipment|by equipment|asset risk/.test(text)) return "one row per equipment";
+    if (/per order|each order|every order|order list|maintenance order/.test(text)) return "one row per qualifying maintenance order";
+    if (/material/.test(text)) return "one row per qualifying material";
+    return "one row per qualifying record";
+  };
+
   const make = (level, title, pattern, task, solution, note, hint1, hint2) => ({
     level,
     title,
     pattern,
-    scenario: `An analyst has been asked to solve this ${level.toLowerCase()} fleet-operations problem with a clear, auditable SQL query.`,
+    scenario: buildScenario(title, task),
     task,
+    grain: inferGrain(title, task),
     requirements: [
-      `Primary pattern: ${pattern}`,
-      "Use only the three available practice tables",
-      "Return a stable, reviewable result"
+      `Use the ${pattern} pattern`,
+      "Calculate the answer from the three sample tables; do not hard-code result rows",
+      "Use the requested filters, grouping, tie-breaks, and sort order exactly"
     ],
     hints: [hint1 || `Identify the required output grain before using ${pattern}.`, hint2 || "Build the query in small parts and verify the row count at each stage."],
     solution,

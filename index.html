@@ -157,12 +157,25 @@
               <span id="challenge-pattern">Scalar subquery</span>
             </div>
             <h3 id="challenge-name"></h3>
-            <p id="challenge-scenario"></p>
-            <div class="task-box">
-              <span>TASK</span>
-              <p id="challenge-task"></p>
+            <div class="problem-statement">
+              <span class="brief-label">PROBLEM STATEMENT</span>
+              <p id="challenge-scenario"></p>
             </div>
-            <div class="requirements" id="challenge-requirements"></div>
+            <div class="brief-grid">
+              <section class="brief-block task-box" aria-labelledby="find-label">
+                <span class="brief-label" id="find-label">WHAT YOU NEED TO FIND</span>
+                <p id="challenge-task"></p>
+              </section>
+              <section class="brief-block output-spec" aria-labelledby="output-label">
+                <span class="brief-label" id="output-label">EXPECTED OUTPUT</span>
+                <p id="challenge-output-summary">Result shape will appear when the SQL engine is ready.</p>
+                <div class="output-columns" id="challenge-output-columns"></div>
+              </section>
+            </div>
+            <section class="rules-box" aria-labelledby="rules-label">
+              <span class="brief-label" id="rules-label">RULES &amp; CHECKS</span>
+              <ul class="requirements" id="challenge-requirements"></ul>
+            </section>
           </article>
 
           <div class="editor-card">

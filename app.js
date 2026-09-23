@@ -438,6 +438,42 @@ function updateLineNumbers() {
   $("#line-numbers").textContent = Array.from({ length: lines }, (_, i) => i + 1).join("\n");
 }
 
+function tablesUsedBy(query) {
+  return ["equipment", "maintenance_orders", "spare_part_usage"]
+    .filter(table => new RegExp(`\\b${table}\\b`, "i").test(query));
+}
+
+function renderChallengeBrief(challenge) {
+  $("#challenge-scenario").textContent = challenge.scenario;
+  $("#challenge-task").textContent = challenge.task;
+  const tables = tablesUsedBy(challenge.solution);
+  const requirements = [
+    `Result grain: ${challenge.grain || "one row per qualifying record"}`,
+    `Tables to use: ${tables.join(", ")}`,
+    ...challenge.requirements
+  ];
+  $("#challenge-requirements").innerHTML = requirements.map(item => `<li>${item}</li>`).join("");
+
+  const summary = $("#challenge-output-summary");
+  const columns = $("#challenge-output-columns");
+  if (!guidedDb) {
+    summary.textContent = `Build ${challenge.grain || "the requested result"}. Exact columns will appear when the SQL engine is ready.`;
+    columns.innerHTML = "";
+    return;
+  }
+
+  try {
+    const expected = executeSql(challenge.solution);
+    const rowWord = expected.values.length === 1 ? "row" : "rows";
+    const columnWord = expected.columns.length === 1 ? "column" : "columns";
+    summary.textContent = `${expected.values.length} ${rowWord} × ${expected.columns.length} ${columnWord}. Result grain: ${challenge.grain || "one row per qualifying record"}.`;
+    columns.innerHTML = expected.columns.map(column => `<code>${column}</code>`).join("");
+  } catch (error) {
+    summary.textContent = `Build ${challenge.grain || "the requested result"} using the columns named in the task.`;
+    columns.innerHTML = "";
+  }
+}
+
 function loadChallenge(index) {
   saveDraft();
   state.challenge = Math.max(0, Math.min(challenges.length - 1, index));
@@ -449,9 +485,7 @@ function loadChallenge(index) {
   $("#challenge-level").dataset.level = challenge.level;
   $("#challenge-pattern").textContent = challenge.pattern;
   $("#challenge-name").textContent = challenge.title;
-  $("#challenge-scenario").textContent = challenge.scenario;
-  $("#challenge-task").textContent = challenge.task;
-  $("#challenge-requirements").innerHTML = challenge.requirements.map(item => `<span>${item}</span>`).join("");
+  renderChallengeBrief(challenge);
   $("#sql-editor").value = state.drafts[state.challenge] || "";
   $("#feedback").hidden = true;
   $("#hint-panel").hidden = true;
@@ -668,6 +702,7 @@ async function initializeGuidedDatabase() {
     $("#check-query").disabled = false;
     $("#reveal-query").disabled = false;
     $("#check-query").innerHTML = 'Check result <span aria-hidden="true">▶</span>';
+    renderChallengeBrief(challenges[state.challenge]);
   } catch (error) {
     const feedback = $("#feedback");
     feedback.className = "feedback error";
